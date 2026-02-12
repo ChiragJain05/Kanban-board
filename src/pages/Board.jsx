@@ -9,6 +9,16 @@ import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 export default function Board() {
   const navigate = useNavigate();
   const moveTask = useBoardStore((s) => s.moveTask);
+  const hasHydrated = useBoardStore((s) => s.hasHydrated);
+
+
+  if (!hasHydrated) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     logout();
@@ -31,6 +41,13 @@ export default function Board() {
         modifiers={[restrictToWindowEdges]}
         onDragEnd={({ active, over }) => {
           if (!over) return;
+
+          const tasks = useBoardStore.getState().tasks;
+          const draggedTask = tasks.find((t) => t.id === active.id);
+
+
+          if (draggedTask.column === over.id) return;
+
           moveTask(active.id, over.id);
         }}
       >

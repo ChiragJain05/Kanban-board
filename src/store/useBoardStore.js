@@ -6,6 +6,10 @@ import toast from "react-hot-toast";
 export const useBoardStore = create(
   persist(
     (set, get) => ({
+
+      hasHydrated: false,
+      setHasHydrated: (value) => set({ hasHydrated: value }),
+
       tasks: [],
 
       addTask: async (title) => {
@@ -17,14 +21,17 @@ export const useBoardStore = create(
           column: "todo",
         };
 
-        set({ tasks: [...snapshot, newTask] });
+        set({
+          tasks: [...snapshot, newTask],
+        });
 
         try {
           await simulateApi(newTask);
         } catch {
-          set({ tasks: snapshot }); 
-          toast.error("Failed to add task");
+          // rollback
+          set({ tasks: snapshot });
 
+          toast.error("Failed to add task");
         }
       },
 
@@ -41,8 +48,8 @@ export const useBoardStore = create(
           await simulateApi(updated);
         } catch {
           set({ tasks: snapshot });
-          toast.error("Move failed");
 
+          toast.error("Move failed");
         }
       },
 
@@ -53,21 +60,22 @@ export const useBoardStore = create(
 
         set({ tasks: updated });
 
-
-
         try {
           await simulateApi();
           toast.success("Task deleted");
-
         } catch {
           set({ tasks: snapshot });
-          toast.error("Delete failed");
 
+          toast.error("Delete failed");
         }
       },
     }),
     {
       name: "kanban-storage",
+
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );
